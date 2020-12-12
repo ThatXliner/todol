@@ -7,6 +7,9 @@ authors = ["Bryan Hu <bryan.hu.2020@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6"
 
+[tool.poetry.scripts]
+todol = "todol.__main__:main"
+
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 black = "^20.8b1"
