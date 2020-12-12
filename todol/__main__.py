@@ -217,10 +217,11 @@ def main() -> None:
                 interface.success()
 
                 # Why at the top of the file?
-                # To make sure that the command is properly exdcuted
-                # so things like powerlevel10k's "instant prompt"
+                # To make sure that the command is properly executed
+                # so things like Powerlevel10k's "instant prompt"
                 # won't get bothered.
-                # We also use sys.executable to throw all that $PATH mess out the window
+                # We also use sys.executable and __file__
+                # to throw all that $PATH mess out the window
             else:
                 interface.success("Cancelled!")
 
