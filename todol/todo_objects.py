@@ -169,8 +169,3 @@ class TodoContainer(_utils.Deserializable):
     def add_todo(self, todo: Union[Dict[str, str], Todo]) -> None:
         """Adds a todo to the list of todos. Return the todo if it exists"""
         self._todos.append(todo if isinstance(todo, Todo) else Todo(todo))
-
-
-if __name__ == "__main__":
-    print(TodoContainer([{"todo": "die", "due_date": "2017-01-01"}]))
-    print(Todo({"todo": "die", "due_date": "2017-01-01"}))
