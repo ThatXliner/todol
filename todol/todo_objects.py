@@ -53,12 +53,24 @@ class Todo(_utils.Deserializable):  # TODO: Add a delay method
 
     @due_date.setter
     def due_date(self, new_value: Union[datetime.date, str]) -> None:
-        assert isinstance(new_value, (str, datetime.date))
-        self._due_date = (
-            _utils.iso_str_to_datetime(new_value)
-            if isinstance(new_value, str)
-            else new_value
-        )
+        try:
+            assert isinstance(new_value, (str, datetime.date))
+            self._due_date = (
+                _utils.iso_str_to_datetime(new_value)
+                if isinstance(new_value, str)
+                else new_value
+            )
+        except (TypeError, AssertionError) as exception:
+            raise TypeError(
+                "`new_value` must be type str or datetime.date, not %s"
+                % type(new_value).__name__
+            ) from exception
+        except ValueError as exception:
+            assert isinstance(new_value, str)
+            raise ValueError(
+                f"Invalid isoformat string: {new_value!r}. "
+                "(Remember, it must be YYYY-MM-DD padded with zeros)"
+            ) from exception
 
 
 class TodoContainer(_utils.Deserializable):
