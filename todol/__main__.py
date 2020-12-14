@@ -12,8 +12,6 @@ The main cli entry point
 """
 import argparse
 import json
-import os
-import shutil
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -111,7 +109,7 @@ completion_parser.add_argument(
 args = parser.parse_args()
 
 
-def main() -> None:
+def main() -> None:  # TODO: REFACTOR this to an object
     """The main entry point function."""
 
     todol_dir = Path("~/.config/todol").expanduser()
@@ -156,8 +154,24 @@ def main() -> None:
         interface.success("Done!")
         return 0
 
-        interface.error("Not implemented yet")
-        return 1
+    def command_remove() -> int:
+        todos = _get_todo_data()
+        assert isinstance(args.todo, str)  # type: ignore
+
+        interface.info(f"Removing todo {args.todo!r}...")
+        todo_obj = todo_objects.TodoContainer(todos["todos"])
+
+        try:
+            todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
+        except IndexError:
+            interface.error("Could not find todo!")
+            return 1
+        else:
+            todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
+            # Actually add it to the index
+            todo_index.write_text(json.dumps(todos))
+            interface.success("Done!")
+            return 0
 
     def command_finish() -> int:
         todos = _get_todo_data()
@@ -167,95 +181,44 @@ def main() -> None:
 
         todo_obj = todo_objects.TodoContainer(todos["todos"])
         finished_obj = todo_objects.TodoContainer(todos["finished"])
+        try:
+            finished_obj.add_todo(
+                todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
+            )
+        except IndexError:
+            interface.error("Could not find todo!")
+            return 1
+        else:
+            todos["finished"] = _utils.deserialize(finished_obj)  # type: ignore
+            todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
 
-        finished_obj.add_todo(
-            todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
-        )
-
-        todos["finished"] = _utils.deserialize(finished_obj)  # type: ignore
-        todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
-
-        # Actually add it to the index
-        todo_index.write_text(json.dumps(todos))
-        interface.success("Done!")
-        return 0
+            # Actually add it to the index
+            todo_index.write_text(json.dumps(todos))
+            interface.success("Done!")
+            return 0
 
     def command_init() -> int:
         """Initialize todol for the current user."""
 
-        def _initialize_shell() -> None:
-            to_inject = (
-                f"# >>> Section managed/injected by Todol {__version__}>>>\n"
-                + f"{sys.executable} -m {Path(__file__).parent} list\n"
-                + "# <<<<<<\n"
-            )
-            # Get the shell (and default to bash)
-            shell = Path(
-                os.environ.get("SHELL", (shutil.which("bash") or "/bin/bash"))
-            ).name
+        if not (todol_dir.is_dir() and todol_dir.exists()):
+            interface.info(f"Creating todol directory at {todol_dir}...")
+            todol_dir.mkdir(parents=True)  # Also make ~/.config if it doesn't exist
+            interface.success()
 
-            # Calculate the rc file
-            rc_file_path = Path(f"~/.{shell}rc").expanduser()
-            if not (rc_file_path.exists() and rc_file_path.is_file()):
-                rc_file_path.touch()
+        if not (todo_index.is_file() and todo_index.exists()):
+            interface.info("Creating todol index...")
+            todo_index.touch()  # Create todol.json
+            interface.success()
+        if not todo_index.read_text():
+            todo_index.write_text(R'{"todos":[], "finished":[]}')
 
-            # Get rc file contents
-            to_append = rc_file_path.read_text()
+        todos: Dict[str, List[str]] = json.loads(todo_index.read_text())
+        if not todos:  # Empty
+            todos["todos"] = []
+            todos["finished"] = []
+            todos["long_term"] = []
 
-            print(
-                "Would you also like to "
-                f"{interface.BOLD}see your todos{interface.RESET} "
-                "at the start of every shell session?"
-            )
-
-            # Shell injection logic
-            if not to_append.startswith(to_inject) and _utils.yes_or_no():
-
-                # Append the following to the rc file:
-                # # >>> Section managed/injected by Todol [PROGRAM VERSION] >>>
-                # [PYTHON EXECUTABLE] [THIS FILE] list
-                # # <<<<<<
-                interface.info(f"Injecting to {rc_file_path}...")
-
-                assert not to_append.startswith(to_inject)
-
-                # Inject!
-                rc_file_path.write_text(to_inject + to_append)
-
-                interface.success()
-
-                # Why at the top of the file?
-                # To make sure that the command is properly executed
-                # so things like Powerlevel10k's "instant prompt"
-                # won't get bothered.
-                # We also use sys.executable and __file__
-                # to throw all that $PATH mess out the window
-            else:
-                interface.success("Cancelled!")
-
-        def _initialize_directory() -> None:
-            if not (todol_dir.is_dir() and todol_dir.exists()):
-                interface.info(f"Creating todol directory at {todol_dir}...")
-                todol_dir.mkdir(parents=True)  # Also make ~/.config if it doesn't exist
-                interface.success()
-
-        def _initialize_index() -> None:
-            if not (todo_index.is_file() and todo_index.exists()):
-                interface.info("Creating todol index...")
-                todo_index.touch()  # Create todol.json
-                interface.success()
-            if not todo_index.read_text():
-                todo_index.write_text(R'{"todos":[], "finished":[]}')
-            todos: Dict[str, List[str]] = json.loads(todo_index.read_text())
-            if not todos:  # Empty
-                todos["todos"] = []
-                todos["finished"] = []
-                todos["long_term"] = []
-
-        _initialize_directory()
-        _initialize_index()
-        _initialize_shell()
-
+        _utils.initialize_shell(__version__)
         interface.success("\N{SPARKLES} Initialized todol!")
         return 0
 
