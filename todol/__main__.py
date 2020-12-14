@@ -72,7 +72,7 @@ remove_parser.add_argument(
 )
 
 finish_parser = subparsers.add_parser(
-    "finish", help="Finish todo(s)", aliases=("f", "done")
+    "finish", help="Finish todo(s)", aliases=("f", "do")
 )
 finish_parser.add_argument(
     "todo",
