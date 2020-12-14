@@ -213,6 +213,7 @@ def deserialize(obj: Deserializable) -> Any:
 
 
 def initialize_shell(version: str) -> None:
+    """Initialize the shell for todol"""
     to_inject = (
         f"# >>> Section managed/injected by Todol {version}>>>\n"
         + f"{_sys.executable} -m {_Path(__file__).parent} list\n"
