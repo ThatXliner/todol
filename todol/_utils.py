@@ -1,13 +1,20 @@
 """Utilities for todol"""
 
-import abc
-import datetime
+import abc as _abc
+import datetime as _datetime
+import os as _os
+import shutil as _shutil
+import sys as _sys
+from pathlib import Path as _Path
 from typing import Any, Callable, Tuple, Union
 
 from . import _interface as interface
 
-today = datetime.date.today()
+today = _datetime.date.today()
 tomorrow = today.replace(day=today.day + 1)
+users_shell = shell = _Path(
+    _os.environ.get("SHELL", (_shutil.which("bash") or "/bin/bash"))
+).name
 
 
 def add_success(success_message: str = "Success!") -> Callable[..., Any]:  # type: ignore
@@ -146,13 +153,13 @@ def parse_isoformat_date(dtstr: str) -> Tuple[int, int, int]:
         raise ValueError(f"Invalid isoformat string: {dtstr!r}") from exception
 
 
-def iso_str_to_datetime(string: str) -> datetime.date:
+def iso_str_to_datetime(string: str) -> _datetime.date:
     """Convert a string into a datetime.date object.
 
     For serialization datetime.date objects from a
     string in ISO 8601 format (YYYY-MM-DD) for argparse/click.
     """
-    return datetime.date(*parse_isoformat_date(string))
+    return _datetime.date(*parse_isoformat_date(string))
 
 
 def sim_str(string: str) -> str:
@@ -190,10 +197,10 @@ def yes_or_no(prompt: str = "", default: bool = True, err: bool = True) -> bool:
     return answer
 
 
-class Deserializable(metaclass=abc.ABCMeta):  # pylint: disable=too-few-public-methods
+class Deserializable(metaclass=_abc.ABCMeta):  # pylint: disable=too-few-public-methods
     """A base class for deserializable objects"""
 
-    @abc.abstractmethod
+    @_abc.abstractmethod
     def __deserialize__(self) -> Any:  # type: ignore
         pass
 
@@ -203,3 +210,50 @@ def deserialize(obj: Deserializable) -> Any:
     if not (hasattr(obj, "__deserialize__") or issubclass(obj, Deserializable)):  # type: ignore
         raise TypeError("Expected a Deserializable object not %s" % type(obj).__name__)
     return obj.__deserialize__()  # type: ignore
+
+
+def initialize_shell(version: str) -> None:
+    to_inject = (
+        f"# >>> Section managed/injected by Todol {version}>>>\n"
+        + f"{_sys.executable} -m {_Path(__file__).parent} list\n"
+        + "# <<<<<<\n"
+    )
+
+    # Calculate the rc file
+    rc_file_path = _Path(f"~/.{users_shell}rc").expanduser()
+    if not (rc_file_path.exists() and rc_file_path.is_file()):
+        rc_file_path.touch()
+
+    # Get rc file contents
+    to_append = rc_file_path.read_text()
+
+    print(
+        "Would you also like to "
+        f"{interface.BOLD}see your todos{interface.RESET} "
+        "at the start of every shell session?"
+    )
+
+    # Shell injection logic
+    if not to_append.startswith(to_inject) and yes_or_no():
+
+        # Append the following to the rc file:
+        # # >>> Section managed/injected by Todol [PROGRAM VERSION] >>>
+        # [PYTHON EXECUTABLE] [THIS FILE] list
+        # # <<<<<<
+        interface.info(f"Injecting to {rc_file_path}...")
+
+        assert not to_append.startswith(to_inject)
+
+        # Inject!
+        rc_file_path.write_text(to_inject + to_append)
+
+        interface.success()
+
+        # Why at the top of the file?
+        # To make sure that the command is properly executed
+        # so things like Powerlevel10k's "instant prompt"
+        # won't get bothered.
+        # We also use sys.executable and __file__
+        # to throw all that $PATH mess out the window
+    else:
+        interface.success("Cancelled!")

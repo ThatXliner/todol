@@ -107,7 +107,7 @@ class TodoContainer(_utils.Deserializable):
         return self._todos.pop(index)
 
     def pop_thing(self, thing: Union[Dict[str, str], Todo]) -> Todo:
-        """Short summary.
+        """Find and pop a todo.
 
         Parameters
         ----------
