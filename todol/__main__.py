@@ -158,6 +158,24 @@ def main() -> None:
 
         interface.error("Not implemented yet")
         return 1
+    def command_remove() -> int:
+        todos = _get_todo_data()
+        assert isinstance(args.todo, str)  # type: ignore
+
+        interface.info(f"Removing todo {args.todo!r}...")
+        todo_obj = todo_objects.TodoContainer(todos["todos"])
+
+        try:
+            todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
+        except IndexError:
+            interface.error("Could not find todo!")
+            return 1
+        else:
+            todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
+            # Actually add it to the index
+            todo_index.write_text(json.dumps(todos))
+            interface.success("Done!")
+            return 0
 
     def command_finish() -> int:
         todos = _get_todo_data()
