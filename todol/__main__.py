@@ -99,6 +99,15 @@ due_dates.add_argument(
     dest="long_term",
 )
 
+completion_parser = subparsers.add_parser(
+    "complete",
+    help="Generate shell completion. The pycomplete library must be installed, though.",
+    aliases=("c", "completion"),
+)
+completion_parser.add_argument(
+    "shell", choices=("zsh", "bash", "fish", "powershell"), default=_utils.users_shell
+)
+
 args = parser.parse_args()
 
 
@@ -250,12 +259,27 @@ def main() -> None:
         interface.success("\N{SPARKLES} Initialized todol!")
         return 0
 
+    def command_complete() -> int:
+        try:
+            import pycomplete  # type:ignore # pylint: disable=C0415
+        except ModuleNotFoundError:
+            interface.error(
+                "Pycomplete not installed! "
+                "Please install the extra via `pip install todol[complete]`"
+            )
+            return 1
+        else:
+            completer = pycomplete.Completer(parser)  # type: ignore
+            print(completer.render(args.shell))  # type: ignore
+            return 0
+
     subcommands_map = {
         "list": command_list,
         "add": command_add,
         "remove": command_remove,
         "finish": command_finish,
         "init": command_init,
+        "complete": command_complete,
     }
     sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
 
