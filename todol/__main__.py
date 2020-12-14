@@ -241,11 +241,17 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     subcommands_map = {
         "list": command_list,
+        "l": command_list,
         "add": command_add,
+        "a": command_add,
         "remove": command_remove,
+        "r": command_remove,
         "finish": command_finish,
+        "f": command_finish,
+        "do": command_finish,
         "init": command_init,
         "complete": command_complete,
+        "c": command_complete,
     }
     sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
 
