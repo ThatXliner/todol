@@ -103,7 +103,10 @@ completion_parser = subparsers.add_parser(
     aliases=("c", "completion"),
 )
 completion_parser.add_argument(
-    "shell", choices=("zsh", "bash", "fish", "powershell"), default=_utils.users_shell
+    "shell",
+    nargs="?",
+    choices=("zsh", "bash", "fish", "powershell"),
+    default=_utils.users_shell,
 )
 
 args = parser.parse_args()
