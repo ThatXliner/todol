@@ -108,7 +108,7 @@ def main() -> None:
     todol_dir = Path("~/.config/todol").expanduser()
     todo_index = todol_dir.joinpath("todos.json")
 
-    def get_todo_data() -> Dict[str, List[Dict[str, str]]]:
+    def _get_todo_data() -> Dict[str, List[Dict[str, str]]]:
         try:
             todos: Dict[str, List[Dict[str, str]]] = json.loads(todo_index.read_text())
         except OSError:  # It doesn't exist
@@ -119,7 +119,7 @@ def main() -> None:
         return todos
 
     def command_list() -> int:
-        todos = get_todo_data()
+        todos = _get_todo_data()
         if args.type == "todo":  # type: ignore
             if not todos["todos"]:
                 print("\N{PARTY POPPER} No todos!")
@@ -134,7 +134,7 @@ def main() -> None:
         return 0
 
     def command_add() -> int:
-        todos = get_todo_data()
+        todos = _get_todo_data()
         assert isinstance(args.todo, str)  # type: ignore
 
         interface.info(f"Adding todo {args.todo!r} to the list of todos...")
@@ -147,12 +147,11 @@ def main() -> None:
         interface.success("Done!")
         return 0
 
-    def command_remove() -> int:
         interface.error("Not implemented yet")
         return 1
 
     def command_finish() -> int:
-        todos = get_todo_data()
+        todos = _get_todo_data()
         assert isinstance(args.todo, str)  # type: ignore
 
         interface.info(f"Finishing todo {args.todo!r}...")
