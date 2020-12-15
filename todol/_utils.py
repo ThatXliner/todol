@@ -3,12 +3,13 @@
 import abc as _abc
 import datetime as _datetime
 import os as _os
+import re as _re
 import shutil as _shutil
 import sys as _sys
 from pathlib import Path as _Path
 from typing import Any, Callable, Tuple, Union
 
-from . import _interface as interface
+from . import _interface as _intf
 
 today = _datetime.date.today()
 tomorrow = today.replace(day=today.day + 1)
@@ -56,7 +57,7 @@ def add_success(success_message: str = "Success!") -> Callable[..., Any]:  # typ
     def parameter_wrapper(func: Callable[..., Any]) -> Callable[..., Any]:  # type: ignore
         def wrapper(*args: Any, **kwargs: Any) -> Any:  # type: ignore
             value = func(*args, **kwargs)  # type: ignore
-            interface.success(success_message)
+            _intf.success(success_message)
             return value  # type: ignore
 
         return wrapper  # type: ignore
@@ -167,21 +168,24 @@ def sim_str(string: str) -> str:
     return string.lower().strip()
 
 
-def yes_or_no(prompt: str = "", default: bool = True, err: bool = True) -> bool:
+def yes_or_no(
+    prompt: str = "",
+    default: bool = True,
+    err: bool = True,
+    silence_cancel: bool = False,
+) -> bool:
     processed_default = (
-        interface.BOLD
-        + interface.BLUE
-        + ("[Y/n]" if default else "[y/N]")
-        + interface.RESET
+        _intf.BOLD + _intf.BLUE + ("[Y/n]" if default else "[y/N]") + _intf.RESET
     )
-    processed_prompt = f"{interface.YELLOW}{prompt}{interface.RESET}"
+    processed_prompt = f"{_intf.YELLOW}{prompt}{_intf.RESET}"
     while True:
         try:
             answer: Union[str, bool] = (
                 input(f"{processed_prompt}{processed_default}: ").lower().strip()
             )
         except (KeyboardInterrupt, EOFError):
-            print(f"\n{interface.YELLOW}Cancelled!{interface.RESET}")
+            if not silence_cancel:
+                print(f"\n{_intf.YELLOW}Cancelled!{_intf.RESET}")
             answer = False
             break
         if answer in ("y", "yes"):
@@ -191,7 +195,7 @@ def yes_or_no(prompt: str = "", default: bool = True, err: bool = True) -> bool:
         elif answer == "":
             answer = default
         else:
-            interface.error("invalid input", err=err)
+            _intf.error("invalid input", err=err)
             continue
         break
     return answer
@@ -214,6 +218,11 @@ def deserialize(obj: Deserializable) -> Any:
 
 def initialize_shell(version: str) -> None:
     """Initialize the shell for todol"""
+    _already_injected_re = _re.compile(
+        r"# >>> Section managed/injected by Todol (?P<version>[.\d]+)>>>\n"
+        r"(?P<python>.+) -m (?P<script>.+) list\n"
+        r"# <<<<<<\n"
+    )
     to_inject = (
         f"# >>> Section managed/injected by Todol {version}>>>\n"
         + f"{_sys.executable} -m {_Path(__file__).parent} list\n"
@@ -226,35 +235,65 @@ def initialize_shell(version: str) -> None:
         rc_file_path.touch()
 
     # Get rc file contents
-    to_append = rc_file_path.read_text()
+    current_contents = rc_file_path.read_text()
 
-    print(
-        "Would you also like to "
-        f"{interface.BOLD}see your todos{interface.RESET} "
-        "at the start of every shell session?"
-    )
+    # Make sure that we have not already injected or an old version has
+    match = _already_injected_re.match(current_contents)
+    if not match:
+        print(
+            "Would you also like to "
+            f"{_intf.BOLD}see your todos{_intf.RESET} "
+            "at the start of every shell session?"
+        )
 
-    # Shell injection logic
-    if not to_append.startswith(to_inject) and yes_or_no():
+        # Shell injection logic
+        if yes_or_no(silence_cancel=True):
 
-        # Append the following to the rc file:
-        # # >>> Section managed/injected by Todol [PROGRAM VERSION] >>>
-        # [PYTHON EXECUTABLE] [THIS FILE] list
-        # # <<<<<<
-        interface.info(f"Injecting to {rc_file_path}...")
+            # Append the following to the rc file:
+            # # >>> Section managed/injected by Todol [PROGRAM VERSION] >>>
+            # [PYTHON EXECUTABLE] [THIS FILE] list
+            # # <<<<<<
+            _intf.info(f"Injecting to {rc_file_path}...")
 
-        assert not to_append.startswith(to_inject)
+            assert not current_contents.startswith(to_inject)
 
-        # Inject!
-        rc_file_path.write_text(to_inject + to_append)
+            # Inject!
+            rc_file_path.write_text(to_inject + current_contents)
+            assert _already_injected_re.match(rc_file_path.read_text())
 
-        interface.success()
+            _intf.success()
 
-        # Why at the top of the file?
-        # To make sure that the command is properly executed
-        # so things like Powerlevel10k's "instant prompt"
-        # won't get bothered.
-        # We also use sys.executable and __file__
-        # to throw all that $PATH mess out the window
+            # Why at the top of the file?
+            # To make sure that the command is properly executed
+            # so things like Powerlevel10k's "instant prompt"
+            # won't get bothered.
+            # We also use sys.executable and __file__
+            # to throw all that $PATH mess out the window
+        else:
+            _intf.success("Cancelled!")
     else:
-        interface.success("Cancelled!")
+        if not match["version"] == version:  # An older version exists
+            if any(
+                (
+                    int(curr_num) > int(matched_num)
+                    for matched_num in match["version"].split(".")
+                    for curr_num in version.split(".")
+                )
+            ):
+                print(
+                    f"There is a newer version of todol ({_intf.BLUE}{version}{_intf.RESET}) "
+                    "available. Would you like to upgrade snippet already injected in your shell "
+                    f"(currently, version {_intf.BLUE}{match['version']}{_intf.RESET})?"
+                )
+                if yes_or_no(silence_cancel=True):
+                    _intf.info(
+                        f"Updating ({_intf.BLUE}v{match['version']}{_intf.RESET})"
+                        f" -> ({_intf.BLUE}v{version}{_intf.RESET})..."
+                    )
+
+                    current_contents = _already_injected_re.sub(
+                        to_inject, current_contents
+                    )
+                    rc_file_path.write_text(current_contents)
+                else:
+                    _intf.success("Cancelled!")
