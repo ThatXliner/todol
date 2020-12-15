@@ -136,6 +136,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     def command_list() -> int:
         todos = _get_todo_data()
+        print("-" * int(interface.COLUMNS / 3))
         if args.type == "todo":  # type: ignore
             if not todos["todos"]:
                 print("\N{PARTY POPPER} No todos!")
@@ -147,6 +148,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
         elif args.type == "finished":  # type: ignore
             for item in todo_objects.TodoContainer(todos["finished"]):
                 print(f" - {interface.BLUE}{item.name!r}{interface.RESET}")
+        print("-" * int(interface.COLUMNS / 3))
         return 0
 
     def command_add() -> int:
