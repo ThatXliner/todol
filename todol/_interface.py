@@ -115,6 +115,7 @@ def warn(msg: str, *, err: bool = False, shutup: bool = False) -> None:
 
 def error(msg: str, *, err: bool = False, shutup: bool = False) -> None:
     """Print an error message"""
+    # TODO: Change error system to make use of exceptions
     print(
         "\N{COLLISION SYMBOL} %sERROR: %s%s" % (RED, msg, RESET),
         file=(sys.stderr if err else sys.stdout) if not shutup else _trash,

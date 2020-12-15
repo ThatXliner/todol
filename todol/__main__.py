@@ -114,7 +114,7 @@ completion_parser.add_argument(
     choices=("zsh", "bash", "fish", "powershell"),
     default=_utils.users_shell,
 )
-parser.set_defaults(no_shell=False)  # See 232
+parser.set_defaults(no_shell=False)  # See line 232
 args = parser.parse_args()
 
 
@@ -218,7 +218,8 @@ def main() -> None:  # TODO: REFACTOR this to an object
             interface.info("Creating todol index...")
             todo_index.touch()  # Create todol.json
             interface.success()
-        if not todo_index.read_text():
+
+        if not todo_index.read_text():  # Empty
             todo_index.write_text(R'{"todos":[], "finished":[]}')
 
         todos: Dict[str, List[str]] = json.loads(todo_index.read_text())
