@@ -40,6 +40,12 @@ list_parser.add_argument(
     help="The type of todo to list",
 )
 init_parser = subparsers.add_parser("init", help="Initialize todol")
+init_parser.add_argument(
+    "--no-shell",
+    action="store_true",
+    help="Don't inject a todo-listing command to your shell's rc file",
+    dest="no_shell",
+)
 
 add_parser = subparsers.add_parser("add", help="Add a todo", aliases=("a"))
 add_parser.add_argument("todo", help="The todo to add.", type=_utils.sim_str)
@@ -108,7 +114,7 @@ completion_parser.add_argument(
     choices=("zsh", "bash", "fish", "powershell"),
     default=_utils.users_shell,
 )
-
+parser.set_defaults(no_shell=False)  # See 232
 args = parser.parse_args()
 
 
@@ -221,7 +227,8 @@ def main() -> None:  # TODO: REFACTOR this to an object
             todos["finished"] = []
             todos["long_term"] = []
 
-        _utils.initialize_shell(__version__)
+        if not args.no_shell:  # type: ignore  # default to False
+            _utils.initialize_shell(__version__)
         interface.success("\N{SPARKLES} Initialized todol!")
         return 0
 
