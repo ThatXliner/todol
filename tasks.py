@@ -27,17 +27,17 @@ def test(command, coverage=True, verbosity=3):
 
 
 @task
-def clean(_, caches=True, hypothesis_data=True, coverage=True):
+def clean(_, caches=True, hypo=True, cov=True):
     to_destroy = []
     if caches:
         _ = list(here.rglob("__pycache__"))
         if here.joinpath(".pytest_cache").exists():
             _.append(here.joinpath(".pytest_cache"))
         to_destroy.extend(_)
-    if hypothesis_data:
+    if hypo:
         if here.joinpath(".hypothesis").exists():
             to_destroy.append(here.joinpath(".hypothesis"))
-    if coverage:
+    if cov:
         if here.joinpath(".coverage").exists():
             to_destroy.append(here.joinpath(".coverage"))
     for thing in to_destroy:
