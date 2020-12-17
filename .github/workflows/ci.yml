@@ -23,7 +23,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip wheel
         python3 -m pip install poetry
-        poetry lock
+        poetry install
     #- name: Lint with pylint
     #  run: |
     #    python3 -m pylint todol
