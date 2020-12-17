@@ -41,4 +41,3 @@ jobs:
          path: |
              .pytest_cache
              .hypothesis
-             **/__pycache__
