@@ -18,7 +18,7 @@ def test(command, coverage=True, verbosity=3, color=True):
     to_run = "poetry run pytest tests/ "
     if coverage:
         to_run += "--cov=todol "
-    if color!
+    if color:
         to_run += "--color=yes "
     if verbosity:
         if 0 < verbosity >= 3:
