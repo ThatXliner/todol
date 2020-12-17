@@ -1,6 +1,8 @@
 ======
 Todol
 ======
+.. figure:: https://github.com/ThatXliner/todol/workflows/PythonCI/badge.svg?branch=master
+   :alt: PythonCI
 
 What is todol?
 ----------------
