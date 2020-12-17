@@ -24,9 +24,9 @@ jobs:
         python3 -m pip install --upgrade pip
         python3 -m pip install poetry pylint invoke
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with pylint
-      run: |
-        python3 -m pylint todol
+    #- name: Lint with pylint
+    #  run: |
+    #    python3 -m pylint todol
     - name: Test with pytest
       run: |
         poetry run invoke test
