@@ -14,12 +14,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
-      with:
-          name: Caches
-          path: |
-             .pytest_cache
-             .hypothesis
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -37,10 +31,3 @@ jobs:
       run: poetry run invoke test       
     - name: Send coverage to codecov
       run: curl -s https://codecov.io/bash | bash
-    - uses: actions/upload-artifact@v2
-      with:
-         name: Caches
-         # A list of files, directories, and wildcard patterns to cache and restore
-         path: |
-             .pytest_cache
-             .hypothesis
