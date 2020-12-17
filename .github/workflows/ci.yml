@@ -30,7 +30,7 @@ jobs:
     - name: Test with pytest
       run: poetry run invoke test       
     - name: Send coverage to codecov
-      run: bash <(curl -s https://codecov.io/bash)
+      run: curl -s https://codecov.io/bash | bash
     - uses: actions/upload-artifact@v2
       with:
          name: Caches
