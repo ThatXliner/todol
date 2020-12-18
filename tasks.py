@@ -17,7 +17,7 @@ here = Path(__file__).parent
 def test(command, coverage=True, verbosity=3, color=True):
     to_run = "poetry run pytest tests/ "
     if coverage:
-        to_run += "--cov=todol "
+        to_run += "--cov=todol --cov-report xml "
     if color:
         to_run += "--color=yes "
     if verbosity:
