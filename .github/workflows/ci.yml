@@ -29,7 +29,5 @@ jobs:
     #    python3 -m pylint todol
     - name: Test with pytest
       run: poetry run invoke test
-    - name: Make sure cov is there
-      run: ls -la
     - name: Send coverage to codecov
       run: curl -s https://codecov.io/bash | bash
