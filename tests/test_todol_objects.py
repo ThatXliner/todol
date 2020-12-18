@@ -28,14 +28,10 @@ class TestConsistentSerializeDeserialize:
 
 
 class TestTodo:
-    # The following 2 tests are super dumb
-    # They may deem useful as basic sanity checks, though
+    # The following test is super dumb
     @given(todo=st.text(), due_date=st.dates())
     def test_name(self, todo, due_date):
         assert todo == todo_objects.Todo({"todo": todo, "due_date": str(due_date)}).name
-
-    @given(todo=st.text(), due_date=st.dates())
-    def test_due_date(self, todo, due_date):
         assert (
             due_date
             == todo_objects.Todo({"todo": todo, "due_date": str(due_date)}).due_date
@@ -62,6 +58,9 @@ class TestTodo:
 
         with pytest.raises(ValueError):
             test_subject.due_date = invalid_date
+ 
+        with pytest.raises(TypeError):
+            test_subject.due_date = ... # Not a string # NOTE: Can we just do this?
 
         test_subject.due_date = str(another_due_date)
         assert str(test_subject.due_date) == str(another_due_date)
