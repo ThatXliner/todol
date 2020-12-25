@@ -15,84 +15,123 @@ import os
 import platform
 import shutil as _shutil
 import sys
+from typing import Dict, Optional, Tuple
+
+try:
+    import colorama  # type: ignore
+
+    colorama.init()  # type: ignore
+except ImportError:
+    pass
+
+
+class Colors:
+    _ansi_prefix: str = "\033["
+    colors_dict = {
+        "red": "31",
+        "green": "32",
+        "yellow": "33",
+        "blue": "34",
+        "magenta": "35",
+        "cyan": "36",
+        "white": "37",
+        "black": "30",
+    }
+    bg_dict = {key: str(int(value) + 10) for key, value in colors_dict.items()}
+    graphic_modes = {"reset": "0", "bold": "1", "dim": "2"}
+
+    def __init__(self, force: bool = False, no_color: bool = False) -> None:
+        if force and no_color:
+            raise ValueError("arguments 'force' and 'no_color' are mutually exclusive")
+        self._print_colors: bool = force or (not no_color and sys.stdout.isatty())
+
+    def __getattribute__(self, attr: str) -> str:
+        if not self._print_colors:
+            return ""
+        cleaned = "".join(
+            (
+                letter
+                for letter in attr.strip().lower()
+                if letter in "qwertyuiopasdfghjklzxcvbnm_"
+            )
+        ).strip("_")
+        if cleaned or not "".join(cleaned):
+            raise AttributeError("invalid color format")
+        mode = cleaned.split("_as_")
+        try:
+            parsed = parse_fore_back(cleaned)
+        except ValueError:
+            parsed = parse_fore_back(mode[0])
+        finally:
+            color = f"{parsed[0]};{parsed[1]}m" if parsed[1] else f"{parsed[0]}m"
+
+        def parse_fore_back(to_parse: str) -> Tuple[str, Optional[str]]:
+            string = to_parse.split("_on_")
+            if len(string) == 1:
+                try:
+                    return self.colors_dict[string[0]], None
+                except KeyError as exception:
+                    raise ValueError("invalid color name") from exception
+
+            elif len(string) == 2:
+                try:
+                    foreground = self.colors_dict[string[0]]
+                except KeyError as exception:
+                    raise ValueError("invalid color name") from exception
+
+                try:
+                    background = self.bg_dict[string[1]]
+                except KeyError as exception:
+                    raise ValueError("invalid color name") from exception
+
+                return foreground, background
+
+            raise ValueError("invalid color format: too many 'on's")
+
+        if self.graphic_modes.get(cleaned):
+            return self._ansi_prefix + f"{self.graphic_modes[cleaned]}m"
+
+        if len(mode) == 1:
+            return self.ansi_prefix + color
+
+        if len(mode) == 2:
+            try:
+                return self._ansi_prefix + f"{self.graphic_modes[mode[1]]};{color}"
+            except KeyError as exception:
+                raise AttributeError("invalid mode name") from exception
+        assert len(mode) > 2
+        raise AttributeError("invalid mode/color name")
+
+
+Color = Colors
+Colour = Colors
+Colours = Colors
 
 TERM_SIZE = _shutil.get_terminal_size()
 COLUMNS: int = TERM_SIZE.columns
 LINES: int = TERM_SIZE.lines
+
+color_object = Colors()
+BLACK: str = color_object.black
+WHITE: str = color_object.white
+RED: str = color_object.red
+BLUE: str = color_object.blue
+YELLOW: str = color_object.yellow
+GREEN: str = color_object.green
+MAGENTA: str = color_object.magenta
+CYAN: str = color_object.cyan
+RESET: str = color_object.reset
+BOLD: str = color_object.bold
+
 _ansi_prefix: str = "\033["
-if sys.stdout.isatty():  # Test if printing to a terminal (or a terminal-like device)
-    if platform.system() == "Windows":  # Special Windows support
-        try:
-            import colorama  # type: ignore
-
-            colorama.init()  # type: ignore
-        except ImportError:
-            pass
-
-    ###
-    # Foreground colors
-    ###
-
-    # Monotone
-    BLACK: str = _ansi_prefix + "30m"
-    WHITE: str = _ansi_prefix + "37m"
-
-    # Primary
-    RED: str = _ansi_prefix + "31m"
-    BLUE: str = _ansi_prefix + "34m"
-    YELLOW: str = _ansi_prefix + "33m"
-
-    # Secondary
-    GREEN: str = _ansi_prefix + "32m"
-    MAGENTA: str = _ansi_prefix + "35m"
-    CYAN: str = _ansi_prefix + "36m"
-
-    # Meta
-    RESET: str = _ansi_prefix + "0m"
-    BOLD: str = _ansi_prefix + "1m"
-    ###
-    # Background colors
-    ###
-
-    # Monotone
-    BACKGROUND_BLACK: str = _ansi_prefix + "40m"
-    BACKGROUND_WHITE: str = _ansi_prefix + "47m"
-
-    # Primary
-    BACKGROUND_RED: str = _ansi_prefix + "41m"
-    BACKGROUND_BLUE: str = _ansi_prefix + "44m"
-    BACKGROUND_YELLOW: str = _ansi_prefix + "43m"
-
-    # Secondary
-    BACKGROUND_GREEN: str = _ansi_prefix + "42m"
-    BACKGROUND_MAGENTA: str = _ansi_prefix + "45m"
-    BACKGROUND_CYAN: str = _ansi_prefix + "46m"
-else:  # Strip ANSI if not printing to a terminal
-    BLACK = (
-        WHITE
-    ) = (
-        RED
-    ) = (
-        BLUE
-    ) = (
-        YELLOW
-    ) = (
-        GREEN
-    ) = (
-        MAGENTA
-    ) = (
-        CYAN
-    ) = (
-        RESET
-    ) = (
-        BOLD
-    ) = (
-        BACKGROUND_BLACK
-    ) = (
-        BACKGROUND_BLUE
-    ) = (
-        BACKGROUND_YELLOW
-    ) = BACKGROUND_GREEN = BACKGROUND_MAGENTA = BACKGROUND_CYAN = ""  # Nothing
+BACKGROUND_BLACK: str = _ansi_prefix + "40m"
+BACKGROUND_WHITE: str = _ansi_prefix + "47m"
+BACKGROUND_RED: str = _ansi_prefix + "41m"
+BACKGROUND_BLUE: str = _ansi_prefix + "44m"
+BACKGROUND_YELLOW: str = _ansi_prefix + "43m"
+BACKGROUND_GREEN: str = _ansi_prefix + "42m"
+BACKGROUND_MAGENTA: str = _ansi_prefix + "45m"
+BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 
 _trash = open(os.devnull, "w")
 
