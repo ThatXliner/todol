@@ -17,13 +17,15 @@ from pathlib import Path
 from typing import Dict, List
 
 from . import __version__
-from . import _interface as interface
+from . import _interface as intf
 from . import _utils, todo_objects
+from ._opts import color_options
 
 parser = argparse.ArgumentParser(
     description="A todo list CLI tool",
     prog="todol",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    parents=[color_options],
 )
 parser.add_argument(
     "--version", action="version", version="%(prog)s {}".format(__version__)
@@ -31,7 +33,9 @@ parser.add_argument(
 
 subparsers = parser.add_subparsers(dest="command")
 
-list_parser = subparsers.add_parser("list", help="List todos", aliases=("l"))
+list_parser = subparsers.add_parser(
+    "list", help="List todos", aliases=("l"), parents=[color_options]
+)
 list_parser.add_argument(
     "type",
     choices=("todo", "finished", "fin"),
@@ -39,7 +43,9 @@ list_parser.add_argument(
     default="todo",
     help="The type of todo to list",
 )
-init_parser = subparsers.add_parser("init", help="Initialize todol")
+init_parser = subparsers.add_parser(
+    "init", help="Initialize todol", parents=[color_options]
+)
 init_parser.add_argument(
     "--no-shell",
     action="store_true",
@@ -47,7 +53,9 @@ init_parser.add_argument(
     dest="no_shell",
 )
 
-add_parser = subparsers.add_parser("add", help="Add a todo", aliases=("a"))
+add_parser = subparsers.add_parser(
+    "add", help="Add a todo", aliases=("a"), parents=[color_options]
+)
 add_parser.add_argument("todo", help="The todo to add.", type=_utils.sim_str)
 
 due_dates = add_parser.add_mutually_exclusive_group()
@@ -70,7 +78,10 @@ due_dates.add_argument(
 )
 
 remove_parser = subparsers.add_parser(
-    "remove", help="Remove todo(s) without finishing them", aliases=("r", "remove")
+    "remove",
+    help="Remove todo(s) without finishing them",
+    aliases=("r", "remove"),
+    parents=[color_options],
 )
 remove_parser.add_argument(
     "todo",
@@ -78,7 +89,7 @@ remove_parser.add_argument(
 )
 
 finish_parser = subparsers.add_parser(
-    "finish", help="Finish todo(s)", aliases=("f", "do")
+    "finish", help="Finish todo(s)", aliases=("f", "do"), parents=[color_options]
 )
 finish_parser.add_argument(
     "todo",
@@ -123,6 +134,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     todol_dir = Path("~/.config/todol").expanduser()
     todo_index = todol_dir.joinpath("todos.json")
+    interface = intf.Color(no_color=args.no_color, force_color=args.force_color)  # type: ignore
 
     def _get_todo_data() -> Dict[str, List[Dict[str, str]]]:
         try:
