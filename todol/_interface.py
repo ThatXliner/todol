@@ -23,9 +23,11 @@ try:
 except ImportError:
     pass
 
+_ansi_prefix: str = "\033["
 
-class Colors:
-    _ansi_prefix: str = "\033["
+
+class Interface:
+
     colors_dict: Dict[str, str] = {
         "red": "31",
         "green": "32",
@@ -40,11 +42,18 @@ class Colors:
         key: str(int(value) + 10) for key, value in colors_dict.items()
     }
     graphic_modes = {"reset": "0", "bold": "1", "dim": "2"}
+    TERM_SIZE = _shutil.get_terminal_size()
+    COLUMNS: int = TERM_SIZE.columns
+    LINES: int = TERM_SIZE.lines
 
-    def __init__(self, force: bool = False, no_color: bool = False) -> None:
-        if force and no_color:
-            raise ValueError("arguments 'force' and 'no_color' are mutually exclusive")
-        self._print_colors: bool = force or (not no_color and _sys.stdout.isatty())
+    def __init__(self, force_color: bool = False, no_color: bool = False) -> None:
+        if force_color and no_color:
+            raise ValueError(
+                "arguments 'force_color' and 'no_color' are mutually exclusive"
+            )
+        self._print_colors: bool = force_color or (
+            not no_color and _sys.stdout.isatty()
+        )
 
     def __getattr__(self, attr: str) -> str:
         if not self._print_colors:
@@ -83,7 +92,7 @@ class Colors:
 
         mode = cleaned.split("_as_")
         if self.graphic_modes.get(cleaned):
-            return self._ansi_prefix + f"{self.graphic_modes[cleaned]}m"
+            return _ansi_prefix + f"{self.graphic_modes[cleaned]}m"
 
         try:
             parsed = parse_fore_back(cleaned)
@@ -92,38 +101,67 @@ class Colors:
         color = f"{parsed[0]};{parsed[1]}m" if parsed[1] else f"{parsed[0]}m"
 
         if len(mode) == 1:
-            return self._ansi_prefix + color
+            return _ansi_prefix + color
 
         if len(mode) == 2:
             try:
-                return self._ansi_prefix + f"{self.graphic_modes[mode[1]]};{color}"
+                return _ansi_prefix + f"{self.graphic_modes[mode[1]]};{color}"
             except KeyError as exception:
                 raise AttributeError("invalid mode name") from exception
         assert len(mode) > 2
         raise AttributeError("invalid mode/color name")
 
+    def info(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
+        """Print an informational message"""
+        print(
+            "%sINFO: %s%s%s" % (self.BLUE, self.YELLOW, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
+        )
 
-Color = Colors
-Colour = Colors
-Colours = Colors
+    def warn(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
+        """Print a warning"""
+        print(
+            "\N{WARNING SIGN} %sWARNING: %s%s" % (self.YELLOW, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
+        )
 
-TERM_SIZE = _shutil.get_terminal_size()
-COLUMNS: int = TERM_SIZE.columns
-LINES: int = TERM_SIZE.lines
+    def error(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
+        """Print an error message"""
+        # TODO: Change error system to make use of exceptions
+        print(
+            "\N{COLLISION SYMBOL} %sERROR: %s%s" % (self.RED, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
+        )
 
-color_object = Colors()
-BLACK: str = color_object.black
-WHITE: str = color_object.white
-RED: str = color_object.red
-BLUE: str = color_object.blue
-YELLOW: str = color_object.yellow
-GREEN: str = color_object.green
-MAGENTA: str = color_object.magenta
-CYAN: str = color_object.cyan
-RESET: str = color_object.reset
-BOLD: str = color_object.bold
+    def success(self, msg: str = "Success!", *, err: bool = False) -> None:
+        """Print a success message"""
+        print(
+            "%s%s%s" % (self.GREEN, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout),
+        )
 
-_ansi_prefix: str = "\033["
+
+Colors = Interface
+Color, Colour, Colours = Colors, Colors, Colors
+color_obj = Color()
+
+TERM_SIZE, COLUMNS, LINES = (
+    color_obj.TERM_SIZE,
+    color_obj.COLUMNS,
+    color_obj.LINES,
+)
+
+BLACK: str = color_obj.black
+WHITE: str = color_obj.white
+RED: str = color_obj.red
+BLUE: str = color_obj.blue
+YELLOW: str = color_obj.yellow
+GREEN: str = color_obj.green
+MAGENTA: str = color_obj.magenta
+CYAN: str = color_obj.cyan
+RESET: str = color_obj.reset
+BOLD: str = color_obj.bold
+
 BACKGROUND_BLACK: str = _ansi_prefix + "40m"
 BACKGROUND_WHITE: str = _ansi_prefix + "47m"
 BACKGROUND_RED: str = _ansi_prefix + "41m"
@@ -135,32 +173,9 @@ BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 
 _trash = open(_os.devnull, "w")
 
-
-def info(msg: str, *, err: bool = False, shutup: bool = False) -> None:
-    """Print an informational message"""
-    print(
-        "%sINFO: %s%s%s" % (BLUE, YELLOW, msg, RESET),
-        file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
-    )
-
-
-def warn(msg: str, *, err: bool = False, shutup: bool = False) -> None:
-    """Print a warning"""
-    print(
-        "\N{WARNING SIGN} %sWARNING: %s%s" % (YELLOW, msg, RESET),
-        file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
-    )
-
-
-def error(msg: str, *, err: bool = False, shutup: bool = False) -> None:
-    """Print an error message"""
-    # TODO: Change error system to make use of exceptions
-    print(
-        "\N{COLLISION SYMBOL} %sERROR: %s%s" % (RED, msg, RESET),
-        file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
-    )
-
-
-def success(msg: str = "Success!", *, err: bool = False) -> None:
-    """Print a success message"""
-    print("%s%s%s" % (GREEN, msg, RESET), file=(_sys.stderr if err else _sys.stdout))
+info, warn, error, success = (
+    color_obj.info,
+    color_obj.warn,
+    color_obj.error,
+    color_obj.success,
+)
