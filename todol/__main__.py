@@ -125,7 +125,7 @@ completion_parser.add_argument(
     choices=("zsh", "bash", "fish", "powershell"),
     default=_utils.users_shell,
 )
-parser.set_defaults(no_shell=False)  # See line 232
+parser.set_defaults(no_shell=False)  # See line 244
 args = parser.parse_args()
 
 
