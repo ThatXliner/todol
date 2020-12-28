@@ -36,13 +36,21 @@ subparsers = parser.add_subparsers(dest="command")
 list_parser = subparsers.add_parser(
     "list", help="List todos", aliases=("l"), parents=[color_options]
 )
-list_parser.add_argument(
-    "type",
-    choices=("todo", "finished", "fin"),
-    nargs="?",
-    default="todo",
-    help="The type of todo to list",
+list_display_choices = list_parser.add_mutually_exclusive_group()
+list_display_choices.add_argument(
+    "--finished",
+    "--fin",
+    help="Show finished todos",
+    action="store_true",
+    dest="show_finished",
 )
+list_display_choices.add_argument(
+    "--all",
+    help="Show all todos, whether finished or not",
+    action="store_true",
+    dest="show_all",
+)
+
 init_parser = subparsers.add_parser(
     "init", help="Initialize todol", parents=[color_options]
 )
@@ -148,18 +156,28 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     def command_list() -> int:
         todos = _get_todo_data()
-        print("-" * int(interface.COLUMNS / 3))
-        if args.type == "todo":  # type: ignore
-            if not todos["todos"]:
-                print("\N{PARTY POPPER} No todos!")
+
+        def show_todo() -> None:
             for item in todo_objects.TodoContainer(todos["todos"]):
                 print(
                     f" - {interface.BLUE}{item.name!r}{interface.RESET}, "
                     f"{interface.RED}due at {interface.YELLOW}{item.due_date}{interface.RESET}"
                 )
-        elif args.type == "finished":  # type: ignore
+
+        def show_finished() -> None:
             for item in todo_objects.TodoContainer(todos["finished"]):
-                print(f" - {interface.BLUE}{item.name!r}{interface.RESET}")
+                print(f" - {interface.GREEN}{item.name!r}{interface.RESET}")
+
+        print("-" * int(interface.COLUMNS / 3))
+        if not (args.show_all or args.show_finished):  # type: ignore
+            if not todos["todos"]:
+                print("\N{PARTY POPPER} No todos!")
+            show_todo()
+        elif args.show_finished:  # type: ignore
+            show_finished()
+        else:
+            show_todo()
+            show_finished()
         print("-" * int(interface.COLUMNS / 3))
         return 0
 
