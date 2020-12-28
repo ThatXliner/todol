@@ -14,7 +14,7 @@ See https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#color-codes
 import os as _os
 import shutil as _shutil
 import sys as _sys
-from typing import Dict, Optional, Tuple
+from typing import Dict, NoReturn, Optional, Tuple
 
 try:
     import colorama  # type: ignore
@@ -49,7 +49,7 @@ class Interface:
     def __init__(self, force_color: bool = False, no_color: bool = False) -> None:
         if force_color and no_color:
             raise ValueError(
-                "arguments 'force_color' and 'no_color' are mutually exclusive"
+                "arguments 'force_color' and 'no_color' are mutually exclusive", 1
             )
         self._print_colors: bool = force_color or (
             not no_color and _sys.stdout.isatty()
@@ -125,19 +125,22 @@ class Interface:
             file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
         )
 
-    def error(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
-        """Print an error message"""
-        # TODO: Change error system to make use of exceptions
-        print(
-            "\N{COLLISION SYMBOL} %sERROR: %s%s" % (self.RED, msg, self.RESET),
-            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
-        )
+    def error(self, msg: str, errorcode: int = 1) -> NoReturn:
+        """Raise an error"""
+        raise Exception(msg, errorcode)
 
     def success(self, msg: str = "Success!", *, err: bool = False) -> None:
         """Print a success message"""
         print(
             "%s%s%s" % (self.GREEN, msg, self.RESET),
             file=(_sys.stderr if err else _sys.stdout),
+        )
+
+    def softerror(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
+        """Prints an error but does not raise an exception"""
+        print(
+            "\N{COLLISION SYMBOL} %sERROR: %s%s" % (self.RED, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
         )
 
 
@@ -173,9 +176,10 @@ BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 
 _trash = open(_os.devnull, "w")
 
-info, warn, error, success = (
+info, warn, error, success, softerror = (
     color_obj.info,
     color_obj.warn,
     color_obj.error,
     color_obj.success,
+    color_obj.softerror,
 )

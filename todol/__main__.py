@@ -133,7 +133,7 @@ completion_parser.add_argument(
     choices=("zsh", "bash", "fish", "powershell"),
     default=_utils.users_shell,
 )
-parser.set_defaults(no_shell=False)  # See line 232
+parser.set_defaults(no_shell=False)  # See line 244
 args = parser.parse_args()
 
 
@@ -148,7 +148,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
         try:
             todos: Dict[str, List[Dict[str, str]]] = json.loads(todo_index.read_text())
         except OSError:  # It doesn't exist
-            interface.error("Todol is not initialized!")
+            interface.softerror("Todol is not initialized!")
             command_init()
             todos = json.loads(todo_index.read_text())
         assert isinstance(todos, dict)
@@ -205,8 +205,8 @@ def main() -> None:  # TODO: REFACTOR this to an object
         try:
             todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
         except IndexError:
-            interface.error("Could not find todo!")
-            return 1
+            interface.error("Could not find todo!", 1)
+
         else:
             todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
             # Actually add it to the index
@@ -227,8 +227,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
                 todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
             )
         except IndexError:
-            interface.error("Could not find todo!")
-            return 1
+            interface.error("Could not find todo!", 1)
         else:
             todos["finished"] = _utils.deserialize(finished_obj)  # type: ignore
             todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
@@ -271,9 +270,9 @@ def main() -> None:  # TODO: REFACTOR this to an object
         except ModuleNotFoundError:
             interface.error(
                 "Pycomplete not installed! "
-                "Please install the extra via `pip install todol[complete]`"
+                "Please install the extra via `pip install todol[complete]`",
+                1,
             )
-            return 1
         else:
             completer = pycomplete.Completer(parser)  # type: ignore
             print(completer.render(args.shell))  # type: ignore
@@ -293,7 +292,19 @@ def main() -> None:  # TODO: REFACTOR this to an object
         "complete": command_complete,
         "c": command_complete,
     }
-    sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
+    try:
+        sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
+    except Exception as exception:  # pylint: disable=broad-except
+        value = exception.args[0]  # type: ignore
+        if len(exception.args) == 1:  # type: ignore
+            print(f"\N{COLLISION SYMBOL} {interface.RED}{value}{interface.RESET}")  # type: ignore
+            sys.exit(1)
+        assert len(exception.args) == 2  # type: ignore
+        returncode = exception.args[1]  # type: ignore
+        assert isinstance(value, str)  # type: ignore
+        assert isinstance(returncode, int)  # type: ignore
+        print(f"\N{COLLISION SYMBOL} {interface.RED}{value}{interface.RESET}")
+        sys.exit(returncode)
 
 
 if __name__ == "__main__":
