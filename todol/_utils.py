@@ -195,7 +195,7 @@ def yes_or_no(
         elif answer == "":
             answer = default
         else:
-            _intf.error("invalid input", err=err)
+            _intf.softerror("invalid input", err=err)
             continue
         break
     return answer

@@ -140,7 +140,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
         try:
             todos: Dict[str, List[Dict[str, str]]] = json.loads(todo_index.read_text())
         except OSError:  # It doesn't exist
-            interface.warn("Todol is not initialized!")
+            interface.softerror("Todol is not initialized!")
             command_init()
             todos = json.loads(todo_index.read_text())
         assert isinstance(todos, dict)

@@ -136,6 +136,13 @@ class Interface:
             file=(_sys.stderr if err else _sys.stdout),
         )
 
+    def softerror(self, msg: str, *, err: bool = False, shutup: bool = False) -> None:
+        """Prints an error but does not raise an exception"""
+        print(
+            "\N{COLLISION SYMBOL} %sERROR: %s%s" % (self.RED, msg, self.RESET),
+            file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
+        )
+
 
 Colors = Interface
 Color, Colour, Colours = Colors, Colors, Colors
@@ -169,9 +176,10 @@ BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 
 _trash = open(_os.devnull, "w")
 
-info, warn, error, success = (
+info, warn, error, success, softerror = (
     color_obj.info,
     color_obj.warn,
     color_obj.error,
     color_obj.success,
+    color_obj.softerror,
 )
