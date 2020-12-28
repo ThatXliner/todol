@@ -277,8 +277,11 @@ def main() -> None:  # TODO: REFACTOR this to an object
     try:
         sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
     except Exception as exception:  # pylint: disable=broad-except
-        assert len(exception.args) == 2  # type: ignore
         value = exception.args[0]  # type: ignore
+        if len(exception.args) == 1:  # type: ignore
+            print(f"\N{COLLISION SYMBOL} {interface.RED}{value}{interface.RESET}")  # type: ignore
+            sys.exit(1)
+        assert len(exception.args) == 2  # type: ignore
         returncode = exception.args[1]  # type: ignore
         assert isinstance(value, str)  # type: ignore
         assert isinstance(returncode, int)  # type: ignore
