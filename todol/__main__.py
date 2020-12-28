@@ -20,7 +20,7 @@ from typing import Dict, List
 from . import __version__
 from . import _interface as intf
 from . import _utils, todo_objects
-from ._opts import color_options
+from ._opts import color_options, due_date_options
 
 parser = argparse.ArgumentParser(
     description="A todo list CLI tool",
@@ -37,13 +37,21 @@ subparsers = parser.add_subparsers(dest="command")
 list_parser = subparsers.add_parser(
     "list", help="List todos", aliases=("l"), parents=[color_options]
 )
-list_parser.add_argument(
-    "type",
-    choices=("todo", "finished", "fin"),
-    nargs="?",
-    default="todo",
-    help="The type of todo to list",
+list_display_choices = list_parser.add_mutually_exclusive_group()
+list_display_choices.add_argument(
+    "--finished",
+    "--fin",
+    help="Show finished todos",
+    action="store_true",
+    dest="show_finished",
 )
+list_display_choices.add_argument(
+    "--all",
+    help="Show all todos, whether finished or not",
+    action="store_true",
+    dest="show_all",
+)
+
 init_parser = subparsers.add_parser(
     "init", help="Initialize todol", parents=[color_options]
 )
@@ -55,34 +63,16 @@ init_parser.add_argument(
 )
 
 add_parser = subparsers.add_parser(
-    "add", help="Add a todo", aliases=("a"), parents=[color_options]
+    "add", help="Add a todo", aliases=("a"), parents=[color_options, due_date_options]
 )
 add_parser.add_argument("todo", help="The todo to add.", type=_utils.sim_str)
 
-due_dates = add_parser.add_mutually_exclusive_group()
-due_dates.add_argument(  # TODO: Add time capability
-    "--due",
-    "--due-date",
-    "-d",
-    default=str(_utils.tomorrow),
-    type=str,
-    help="The due date in ISO 8601 format, YYYY-MM-DD (padded with zeros, if required)",
-    dest="due_date",
-)
-due_dates.add_argument(
-    "--long-term",
-    "--long",
-    "-l",
-    action="store_true",
-    help="Make the todo a long term goal",
-    dest="long_term",
-)
 
 remove_parser = subparsers.add_parser(
     "remove",
     help="Remove todo(s) without finishing them",
     aliases=("r", "remove"),
-    parents=[color_options],
+    parents=[color_options, due_date_options],
 )
 remove_parser.add_argument(
     "todo",
@@ -90,30 +80,16 @@ remove_parser.add_argument(
 )
 
 finish_parser = subparsers.add_parser(
-    "finish", help="Finish todo(s)", aliases=("f", "do"), parents=[color_options]
+    "finish",
+    help="Finish todo(s)",
+    aliases=("f", "do"),
+    parents=[color_options, due_date_options],
 )
 finish_parser.add_argument(
     "todo",
     help="The todo to finish. Will be fuzzy matched or matched by ID/date/etc",
 )
-due_dates = finish_parser.add_mutually_exclusive_group()
-due_dates.add_argument(  # TODO: Add time capability
-    "--due",
-    "--due-date",
-    "-d",
-    default=str(_utils.tomorrow),
-    type=str,
-    help="The due date in ISO 8601 format, YYYY-MM-DD (padded with zeros, if required)",
-    dest="due_date",
-)
-due_dates.add_argument(
-    "--long-term",
-    "--long",
-    "-l",
-    action="store_true",
-    help="Make the todo a long term goal",
-    dest="long_term",
-)
+
 
 completion_parser = subparsers.add_parser(
     "complete",
@@ -126,7 +102,7 @@ completion_parser.add_argument(
     choices=("zsh", "bash", "fish", "powershell"),
     default=_utils.users_shell,
 )
-parser.set_defaults(no_shell=False)  # See line 232
+parser.set_defaults(no_shell=False)  # See line 244
 args = parser.parse_args()
 
 
@@ -141,7 +117,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
         try:
             todos: Dict[str, List[Dict[str, str]]] = json.loads(todo_index.read_text())
         except OSError:  # It doesn't exist
-            interface.error("Todol is not initialized!")
+            interface.softerror("Todol is not initialized!")
             command_init()
             todos = json.loads(todo_index.read_text())
         assert isinstance(todos, dict)
@@ -149,18 +125,28 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     def command_list() -> int:
         todos = _get_todo_data()
-        print("-" * int(interface.COLUMNS / 3))
-        if args.type == "todo":  # type: ignore
-            if not todos["todos"]:
-                print("\N{PARTY POPPER} No todos!")
+
+        def show_todo() -> None:
             for item in todo_objects.TodoContainer(todos["todos"]):
                 print(
                     f" - {interface.BLUE}{item.name!r}{interface.RESET}, "
                     f"{interface.RED}due at {interface.YELLOW}{item.due_date}{interface.RESET}"
                 )
-        elif args.type == "finished":  # type: ignore
+
+        def show_finished() -> None:
             for item in todo_objects.TodoContainer(todos["finished"]):
-                print(f" - {interface.BLUE}{item.name!r}{interface.RESET}")
+                print(f" - {interface.GREEN}{item.name!r}{interface.RESET}")
+
+        print("-" * int(interface.COLUMNS / 3))
+        if not (args.show_all or args.show_finished):  # type: ignore
+            if not todos["todos"]:
+                print("\N{PARTY POPPER} No todos!")
+            show_todo()
+        elif args.show_finished:  # type: ignore
+            show_finished()
+        else:
+            show_todo()
+            show_finished()
         print("-" * int(interface.COLUMNS / 3))
         return 0
 
@@ -188,8 +174,8 @@ def main() -> None:  # TODO: REFACTOR this to an object
         try:
             todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
         except IndexError:
-            interface.error("Could not find todo!")
-            return 1
+            interface.error("Could not find todo!", 1)
+
         else:
             todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
             # Actually add it to the index
@@ -210,8 +196,7 @@ def main() -> None:  # TODO: REFACTOR this to an object
                 todo_obj.pop_thing({"todo": args.todo, "due_date": args.due_date})  # type: ignore
             )
         except IndexError:
-            interface.error("Could not find todo!")
-            return 1
+            interface.error("Could not find todo!", 1)
         else:
             todos["finished"] = _utils.deserialize(finished_obj)  # type: ignore
             todos["todos"] = _utils.deserialize(todo_obj)  # type: ignore
@@ -254,9 +239,9 @@ def main() -> None:  # TODO: REFACTOR this to an object
         except ModuleNotFoundError:
             interface.error(
                 "Pycomplete not installed! "
-                "Please install the extra via `pip install todol[complete]`"
+                "Please install the extra via `pip install todol[complete]`",
+                1,
             )
-            return 1
         else:
             completer = pycomplete.Completer(parser)  # type: ignore
             print(completer.render(args.shell))  # type: ignore
@@ -276,7 +261,19 @@ def main() -> None:  # TODO: REFACTOR this to an object
         "complete": command_complete,
         "c": command_complete,
     }
-    sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
+    try:
+        sys.exit(subcommands_map.get(args.command, parser.print_help)() or 0)  # type: ignore
+    except Exception as exception:  # pylint: disable=broad-except
+        value = exception.args[0]  # type: ignore
+        if len(exception.args) == 1:  # type: ignore
+            print(f"\N{COLLISION SYMBOL} {interface.RED}{value}{interface.RESET}")  # type: ignore
+            sys.exit(1)
+        assert len(exception.args) == 2  # type: ignore
+        returncode = exception.args[1]  # type: ignore
+        assert isinstance(value, str)  # type: ignore
+        assert isinstance(returncode, int)  # type: ignore
+        print(f"\N{COLLISION SYMBOL} {interface.RED}{value}{interface.RESET}")
+        sys.exit(returncode)
 
 
 if __name__ == "__main__":
