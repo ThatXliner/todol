@@ -10,14 +10,14 @@ Version: v0.1.0
 A file of parsers for argparse
 
 """
-import argparse
-from typing import Any, Callable, Optional, Sequence, Tuple
+import argparse as _argparse
 import os as _os
+from typing import Any, Callable, Optional, Sequence, Tuple
+
 from . import _utils
 
 __all__ = ["color_options", "due_date_options"]
-color_options: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
-
+color_options: _argparse.ArgumentParser = _argparse.ArgumentParser(add_help=False)
 
 
 class BooleanOptionalAction(_argparse.Action):
@@ -59,7 +59,7 @@ class BooleanOptionalAction(_argparse.Action):
             metavar=metavar,
         )
 
-    def __call__(self, parser, namespace: argparse.Namespace, values, option_string: Optional[str] = None) -> None:  # type: ignore
+    def __call__(self, parser, namespace: _argparse.Namespace, values, option_string: Optional[str] = None) -> None:  # type: ignore
         if option_string in self.option_strings:
             assert isinstance(option_string, str)
             setattr(namespace, self.dest, not option_string.startswith("--no-"))
@@ -84,7 +84,7 @@ opts.add_argument(
     dest="force_color",
     default=bool(int(_os.environ.get("TODOL_FORCE_COLOR", 0))),
 )
-due_date_options: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+due_date_options: _argparse.ArgumentParser = _argparse.ArgumentParser(add_help=False)
 due_dates = due_date_options.add_mutually_exclusive_group()
 due_dates.add_argument(  # TODO: Add time capability
     "--due",
