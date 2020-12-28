@@ -19,7 +19,7 @@ from typing import Dict, List
 from . import __version__
 from . import _interface as intf
 from . import _utils, todo_objects
-from ._opts import color_options
+from ._opts import color_options, due_date_options
 
 parser = argparse.ArgumentParser(
     description="A todo list CLI tool",
@@ -62,34 +62,16 @@ init_parser.add_argument(
 )
 
 add_parser = subparsers.add_parser(
-    "add", help="Add a todo", aliases=("a"), parents=[color_options]
+    "add", help="Add a todo", aliases=("a"), parents=[color_options, due_date_options]
 )
 add_parser.add_argument("todo", help="The todo to add.", type=_utils.sim_str)
 
-due_dates = add_parser.add_mutually_exclusive_group()
-due_dates.add_argument(  # TODO: Add time capability
-    "--due",
-    "--due-date",
-    "-d",
-    default=str(_utils.tomorrow),
-    type=str,
-    help="The due date in ISO 8601 format, YYYY-MM-DD (padded with zeros, if required)",
-    dest="due_date",
-)
-due_dates.add_argument(
-    "--long-term",
-    "--long",
-    "-l",
-    action="store_true",
-    help="Make the todo a long term goal",
-    dest="long_term",
-)
 
 remove_parser = subparsers.add_parser(
     "remove",
     help="Remove todo(s) without finishing them",
     aliases=("r", "remove"),
-    parents=[color_options],
+    parents=[color_options, due_date_options],
 )
 remove_parser.add_argument(
     "todo",
@@ -97,30 +79,16 @@ remove_parser.add_argument(
 )
 
 finish_parser = subparsers.add_parser(
-    "finish", help="Finish todo(s)", aliases=("f", "do"), parents=[color_options]
+    "finish",
+    help="Finish todo(s)",
+    aliases=("f", "do"),
+    parents=[color_options, due_date_options],
 )
 finish_parser.add_argument(
     "todo",
     help="The todo to finish. Will be fuzzy matched or matched by ID/date/etc",
 )
-due_dates = finish_parser.add_mutually_exclusive_group()
-due_dates.add_argument(  # TODO: Add time capability
-    "--due",
-    "--due-date",
-    "-d",
-    default=str(_utils.tomorrow),
-    type=str,
-    help="The due date in ISO 8601 format, YYYY-MM-DD (padded with zeros, if required)",
-    dest="due_date",
-)
-due_dates.add_argument(
-    "--long-term",
-    "--long",
-    "-l",
-    action="store_true",
-    help="Make the todo a long term goal",
-    dest="long_term",
-)
+
 
 completion_parser = subparsers.add_parser(
     "complete",
