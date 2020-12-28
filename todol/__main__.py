@@ -12,6 +12,7 @@ The main cli entry point
 """
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -108,7 +109,7 @@ args = parser.parse_args()
 def main() -> None:  # TODO: REFACTOR this to an object
     """The main entry point function."""
 
-    todol_dir = Path("~/.config/todol").expanduser()
+    todol_dir = Path(os.environ.get("TODOL_CONFIG_DIR", "~/.config/todol")).expanduser()
     todo_index = todol_dir.joinpath("todos.json")
     interface = intf.Color(no_color=args.no_color, force_color=args.force_color)  # type: ignore
 
