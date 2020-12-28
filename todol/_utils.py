@@ -3,6 +3,7 @@
 import abc as _abc
 import datetime as _datetime
 import os as _os
+import platform as _platform
 import re as _re
 import shutil as _shutil
 import sys as _sys
@@ -218,14 +219,26 @@ def deserialize(obj: Deserializable) -> Any:
 
 def initialize_shell(version: str) -> None:
     """Initialize the shell for todol"""
+    project_dir = _Path(__file__).parent.parent
     _already_injected_re = _re.compile(
         r"# >>> Section managed/injected by Todol (?P<version>[.\d]+)>>>\n"
-        r"(?P<python>.+) -m (?P<script>.+) list\n"
-        r"# <<<<<<\n"
+        r"# Make sure it is on your PYTHONPATH\n"
+        r".+\n"
+        r"# Run `todol list`\n"
+        r"(?P<python>.+) -m todol list\n"
+        r"# <<<<<<\n",
+        flags=_re.IGNORECASE,
     )
     to_inject = (
         f"# >>> Section managed/injected by Todol {version}>>>\n"
-        + f"{_sys.executable} -m {_Path(__file__).parent} list\n"
+        + "# Make sure it is on your PYTHONPATH\n"
+        + (
+            f'setx pythonpath "%pythonpath%;{project_dir}"\n'
+            if _platform.system() == "Windows"
+            else f'export PYTHONPATH="$PYTHONPATH:{project_dir}"\n'
+        )
+        + "# Run `todol list`\n"
+        + f"{_sys.executable} -m todol list\n"
         + "# <<<<<<\n"
     )
 
