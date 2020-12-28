@@ -42,6 +42,7 @@ def clean(_, caches=True, hypo=True, cov=True):
     if cov:
         if here.joinpath(".coverage").exists():
             to_destroy.append(here.joinpath(".coverage"))
+            to_destroy.append(here.joinpath("coverage.xml"))
     for thing in to_destroy:
         if thing.is_dir():
             # print(f"Will remove dir {thing}")
