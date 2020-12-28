@@ -11,13 +11,14 @@ Version: v0.1.0
 A file of parsers for argparse
 
 """
-import argparse
+import argparse as _argparse
+import os as _os
 
 __all__ = ["color_options"]
-color_options: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+color_options: _argparse.ArgumentParser = _argparse.ArgumentParser(add_help=False)
 
 
-class BooleanOptionalAction(argparse.Action):
+class BooleanOptionalAction(_argparse.Action):
     """A backport of argparse.BooleanOptionalAction"""
 
     # pylint: disable=C,R,W
@@ -67,11 +68,16 @@ class BooleanOptionalAction(argparse.Action):
 opts = color_options.add_mutually_exclusive_group()
 
 opts.add_argument(
-    "--no-color", action="store_true", help="Don't print color", dest="no_color"
+    "--no-color",
+    action="store_true",
+    help="Don't print color",
+    dest="no_color",
+    default=bool(int(_os.environ.get("TODOL_FORCE_COLOR", 0))),
 )
 opts.add_argument(
     "--force-color",
     action="store_true",
     help="Force color output even if not printing to a terminal",
     dest="force_color",
+    default=bool(int(_os.environ.get("TODOL_FORCE_COLOR", 0))),
 )
