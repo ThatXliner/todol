@@ -165,9 +165,12 @@ class Deserializable(metaclass=_abc.ABCMeta):  # pylint: disable=too-few-public-
 
 def deserialize(obj: Deserializable) -> Any:
     """Deserialize an object"""
-    if not (hasattr(obj, "__deserialize__") or issubclass(obj, Deserializable)):  # type: ignore
-        raise TypeError("Expected a Deserializable object not %s" % type(obj).__name__)
-    return obj.__deserialize__()  # type: ignore
+    try:
+        return obj.__deserialize__()  # type: ignore
+    except AttributeError as exception:
+        raise TypeError(
+            "Could not deserialize object of type '%s'" % type(obj).__name__
+        ) from exception
 
 
 def initialize_shell(version: str) -> None:
