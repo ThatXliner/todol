@@ -38,11 +38,11 @@ class TestIsoParsing:
             _utils.parse_isoformat_date(invalid_string)
 
 
-def test_deserialize_raises(self):
+def test_deserialize_raises():
     with pytest.raises(TypeError):
         _utils.deserialize(object)
 
 
 @given(text=st.text())
-def test_str_simularize(self, text):
+def test_str_simularize(text):
     assert text.lower().strip() == _utils.sim_str(text)
