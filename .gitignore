@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 
 # Misc
-.vscode
+.vscode/
+todol_test*/
+todol_test*
