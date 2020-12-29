@@ -222,12 +222,6 @@ def main() -> None:  # TODO: REFACTOR this to an object
         if not todo_index.read_text():  # Empty
             todo_index.write_text(R'{"todos":[], "finished":[]}')
 
-        todos: Dict[str, List[str]] = json.loads(todo_index.read_text())
-        if not todos:  # Empty
-            todos["todos"] = []
-            todos["finished"] = []
-            todos["long_term"] = []
-
         if not args.no_shell:  # type: ignore  # default to False
             _utils.initialize_shell(__version__)
         interface.success("\N{SPARKLES} Initialized todol!")

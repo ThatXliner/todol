@@ -19,53 +19,6 @@ users_shell = shell = _Path(
 ).name
 
 
-def add_success(success_message: str = "Success!") -> Callable[..., Any]:  # type: ignore
-    """A decorator that will add a success message to the end of the function.
-
-    Parameters
-    ----------
-    success_message : str, optional
-        The success message to display (the default is "Success!").
-
-    Returns
-    -------
-    Callable[..., Any]
-        A callable that will return nothing.
-
-    Examples
-    --------
-    Example:
-
-    >>> @add_success()
-    ... def some_func(message):
-    ...     print(f"I said {message}!")
-    >>> some_func("Hello, world!")
-    I said Hello, world!!
-    \033[32mSuccess!\033[0m
-
-    Or with arguments:
-
-    >>> @add_success("Done!")
-    ... def some_func(message):
-    ...     print(f"I said {message}!")
-    >>> some_func("Hello, world!")
-    I said Hello, world!!
-    \033[32mDone!\033[0m
-
-
-    """
-
-    def parameter_wrapper(func: Callable[..., Any]) -> Callable[..., Any]:  # type: ignore
-        def wrapper(*args: Any, **kwargs: Any) -> Any:  # type: ignore
-            value = func(*args, **kwargs)  # type: ignore
-            _intf.success(success_message)
-            return value  # type: ignore
-
-        return wrapper  # type: ignore
-
-    return parameter_wrapper  # type: ignore
-
-
 def fuzzy_match(
     first_string: str, second_string: str, limit: int = 5
 ) -> Union[bool, int]:
@@ -212,9 +165,12 @@ class Deserializable(metaclass=_abc.ABCMeta):  # pylint: disable=too-few-public-
 
 def deserialize(obj: Deserializable) -> Any:
     """Deserialize an object"""
-    if not (hasattr(obj, "__deserialize__") or issubclass(obj, Deserializable)):  # type: ignore
-        raise TypeError("Expected a Deserializable object not %s" % type(obj).__name__)
-    return obj.__deserialize__()  # type: ignore
+    try:
+        return obj.__deserialize__()  # type: ignore
+    except AttributeError as exception:
+        raise TypeError(
+            "Could not deserialize object of type '%s'" % type(obj).__name__
+        ) from exception
 
 
 def initialize_shell(version: str) -> None:
