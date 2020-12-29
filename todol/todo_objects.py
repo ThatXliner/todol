@@ -25,7 +25,7 @@ class Todo(_utils.Deserializable):  # TODO: Add a delay method
         if isinstance(other, Todo):  # type: ignore
             return self._internal_data == other._internal_data
         try:
-            return self._internal_data == dict(other)  # type: ignore
+            return self._internal_data == other  # type: ignore
         except TypeError as exception:
             raise NotImplementedError(
                 f"Cannot compare with {other.__name__}"  # type: ignore
@@ -95,7 +95,9 @@ class TodoContainer(_utils.Deserializable):
     def __repr__(self) -> str:
         return f"TodoContainer({self._todos})"
 
-    def __getitem__(self, todo_name_or_id: Union[int, str]) -> Optional[Todo]:
+    def __getitem__(
+        self, todo_name_or_id: Union[Dict[str, str], Todo, str]
+    ) -> Optional[Todo]:
         """An alias for :py:meth:`.get`"""
         return self.get(todo_name_or_id)
 
