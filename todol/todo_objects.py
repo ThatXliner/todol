@@ -21,6 +21,16 @@ class Todo(_utils.Deserializable):  # TODO: Add a delay method
     def __repr__(self) -> str:
         return f"Todo(name={self._todo_name}, due_date={self._due_date})"
 
+    def __eq__(self, other) -> bool:  # type: ignore
+        if isinstance(other, Todo):  # type: ignore
+            return self._internal_data == other._internal_data
+        try:
+            return self._internal_data == dict(other)  # type: ignore
+        except TypeError as exception:
+            raise NotImplementedError(
+                f"Cannot compare with {other.__name__}"  # type: ignore
+            ) from exception
+
     @property
     def name(self) -> str:
         """The todo."""
@@ -31,7 +41,7 @@ class Todo(_utils.Deserializable):  # TODO: Add a delay method
         self._todo_name = new_value
 
     def __deserialize__(self) -> Dict[str, str]:
-        return self.data
+        return self._internal_data
 
     @property
     def data(self) -> Dict[str, str]:
@@ -78,8 +88,8 @@ class TodoContainer(_utils.Deserializable):
 
     def __init__(self, todos: Iterable[Dict[str, str]]):
         self._todos: List[Todo] = [Todo(item) for item in todos]
-        self._indexed_todos: Dict[Tuple[str, int], Todo] = {
-            (todo.name, index): todo for index, todo in enumerate(self._todos)
+        self._indexed_todos: Dict[Tuple[str, datetime.date], Todo] = {
+            (todo.name, todo.due_date): todo for todo in self._todos
         }
 
     def __repr__(self) -> str:
@@ -141,27 +151,32 @@ class TodoContainer(_utils.Deserializable):
         self._todos.remove(thing)
 
     def get(
-        self, todo_name_or_id: Union[int, str, Todo], fuzzy_limit: int = 5
+        self, todo_name_or_dict: Union[str, Todo, Dict[str, str]], fuzzy_limit: int = 5
     ) -> Optional[Todo]:
         """Search for a todo."""
-
-        if isinstance(todo_name_or_id, Todo) and todo_name_or_id in self._todos:
-            return todo_name_or_id
+        if isinstance(todo_name_or_dict, Todo):
+            assert isinstance(todo_name_or_dict, Todo)
+            if todo_name_or_dict in self._todos:
+                return todo_name_or_dict
+            todo_name: str = todo_name_or_dict.name
+        elif isinstance(todo_name_or_dict, str):
+            todo_name = todo_name_or_dict
+        elif isinstance(todo_name_or_dict, dict):
+            try:
+                todo_name = todo_name_or_dict["todo"]
+            except KeyError as exception:
+                raise ValueError(
+                    "Invalid dictionary structure for `todo_name_or_dict`"
+                ) from exception
 
         for metadata, todo in self._indexed_todos.items():
+            if (
+                isinstance(todo_name_or_dict, (Todo, dict))
+                and todo_name_or_dict == todo
+            ):
+                return todo
             # By fuzzy matching
-            if isinstance(todo_name_or_id, Todo) and _utils.fuzzy_match(
-                metadata[0], todo_name_or_id.name, limit=fuzzy_limit
-            ):
-                return todo
-
-            if isinstance(todo_name_or_id, str) and _utils.fuzzy_match(
-                metadata[0], todo_name_or_id, limit=fuzzy_limit
-            ):
-                return todo
-
-            # By id
-            if isinstance(todo_name_or_id, int) and metadata[1] == todo_name_or_id:
+            if _utils.fuzzy_match(metadata[0], todo_name, limit=fuzzy_limit):
                 return todo
 
         return None
