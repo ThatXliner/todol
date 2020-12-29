@@ -243,7 +243,7 @@ def initialize_shell(version: str) -> None:
     )
 
     # Calculate the rc file
-    rc_file_path = _Path(f"~/.{users_shell}rc").expanduser()
+    rc_file_path = _Path(_os.environ.get("RC_FILE", f"~/.{users_shell}rc")).expanduser()
     if not (rc_file_path.exists() and rc_file_path.is_file()):
         rc_file_path.touch()
 
