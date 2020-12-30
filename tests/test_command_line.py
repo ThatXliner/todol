@@ -35,9 +35,9 @@ MODIFIED_ENV = copy.deepcopy(os.environ).update(
 PYTHON = sys.executable
 
 
-def _run_cmd(cmd, input_=None):
+def _run_cmd(cmd, input_=None, check=True):
     return subprocess.run(
-        cmd, cwd=str(project_dir), check=True, input=input_, env=MODIFIED_ENV
+        cmd, cwd=str(project_dir), check=check, input=input_, env=MODIFIED_ENV
     )
 
 
@@ -46,7 +46,7 @@ def test_meta():
 
 
 def test_version():
-    assert _run_cmd([PYTHON, "-m", "todol", "--version"]).returncode == 0
+    assert _run_cmd((PYTHON, "-m", "todol", "--version")).returncode == 0
 
 
 def test_help():
@@ -64,22 +64,45 @@ def test_help():
 class TestInit:  # TODO: Write tests for subcommands
     def test_no_shell(self):
         _clean()
-        assert _run_cmd([PYTHON, "-m", "todol", "init", "--no-shell"]).returncode == 0
+        assert _run_cmd((PYTHON, "-m", "todol", "init", "--no-shell")).returncode == 0
         assert (
             todol_test_dir.joinpath("todos.json").exists()
             and todol_test_dir.joinpath("todos.json").is_file()
         )
-        assert not (todol_test_rc.exists() and todol_test_rc.is_file())
 
     def test_init(self):
         _clean()
-        assert _run_cmd([PYTHON, "-m", "todol", "init"], input_=b"y\n").returncode == 0
+        assert _run_cmd((PYTHON, "-m", "todol", "init"), input_=b"y\n").returncode == 0
         assert (
             todol_test_dir.joinpath("todos.json").exists()
             and todol_test_dir.joinpath("todos.json").is_file()
         )
-        assert todol_test_rc.exists() and todol_test_rc.is_file()
         assert todol_test_rc.read_text()
+
+    def test_init_default(self):
+        _clean()
+        assert _run_cmd((PYTHON, "-m", "todol", "init"), input_=b"\n").returncode == 0
+        assert (
+            todol_test_dir.joinpath("todos.json").exists()
+            and todol_test_dir.joinpath("todos.json").is_file()
+        )
+        assert todol_test_rc.read_text()
+
+    def test_init_eof_cancel(self):
+        _clean()
+        with subprocess.Popen(
+            (PYTHON, "-m", "todol", "init"),
+            cwd=str(project_dir),
+            env=MODIFIED_ENV,
+            stdin=subprocess.PIPE,
+        ) as process:
+            process.stdin.close()
+            assert process.wait() == 0
+
+        assert (
+            todol_test_dir.joinpath("todos.json").exists()
+            and todol_test_dir.joinpath("todos.json").is_file()
+        )
 
 
 class TestAdd:
@@ -90,7 +113,7 @@ class TestAdd:
         _clean()
         assert (
             _run_cmd(
-                [PYTHON, "-m", "todol", "add", repr(to_add)], input_=b"n\n"
+                (PYTHON, "-m", "todol", "add", repr(to_add)), input_=b"n\n"
             ).returncode
             == 0
         )
@@ -109,7 +132,7 @@ class TestAdd:
         _clean()
         assert (
             _run_cmd(
-                [PYTHON, "-m", "todol", "add", repr(to_add)], input_=b"y\n"
+                (PYTHON, "-m", "todol", "add", repr(to_add)), input_=b"y\n"
             ).returncode
             == 0
         )
@@ -117,8 +140,28 @@ class TestAdd:
             todol_test_dir.joinpath("todos.json").exists()
             and todol_test_dir.joinpath("todos.json").is_file()
         )
-        assert todol_test_rc.exists() and todol_test_rc.is_file()
         assert todol_test_rc.read_text()
         assert json.loads(todol_test_dir.joinpath("todos.json").read_text())["todos"][
             -1
         ]["todo"] == repr(to_add)
+
+
+class TestFinish:
+    @given(non_existing=st.text(alphabet=st.characters(blacklist_categories=("C"))))
+    @settings(deadline=None)
+    def test_finish_nonexisting(self, non_existing):
+        assume(non_existing == sim_str(non_existing))
+        _clean()
+        assert (
+            _run_cmd(
+                (PYTHON, "-m", "todol", "finish", repr(non_existing)),
+                input_=b"y\n",
+                check=False,
+            ).returncode
+            == 1
+        )
+        assert (
+            todol_test_dir.joinpath("todos.json").exists()
+            and todol_test_dir.joinpath("todos.json").is_file()
+        )
+        assert todol_test_rc.read_text()
