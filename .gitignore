@@ -130,3 +130,5 @@ dmypy.json
 
 # Misc
 .vscode
+todol_test_dir/*
+todol_test*

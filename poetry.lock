@@ -368,17 +368,6 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests (==2.0.2)", "six", "pytest-xdist", "virtualenv"]
 
 [[package]]
-name = "pytest-random"
-version = "0.02"
-description = "py.test plugin to randomize tests"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-pytest = ">=2.2.3"
-
-[[package]]
 name = "pyyaml"
 version = "5.3.1"
 description = "YAML parser and emitter for Python"
@@ -488,7 +477,7 @@ complete = ["pycomplete"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "4a175df65df1ea70d320b9cbdd424cb1e650405df214668ac86c2730791ad0fa"
+content-hash = "a8af35008e536afd373633f35f490e1c25fd4fbe236dfcf7f2dc6784785ade49"
 
 [metadata.files]
 appdirs = [
@@ -677,9 +666,6 @@ pytest = [
 pytest-cov = [
     {file = "pytest-cov-2.10.1.tar.gz", hash = "sha256:47bd0ce14056fdd79f93e1713f88fad7bdcc583dcd7783da86ef2f085a0bb88e"},
     {file = "pytest_cov-2.10.1-py2.py3-none-any.whl", hash = "sha256:45ec2d5182f89a81fc3eb29e3d1ed3113b9e9a873bcddb2a71faaab066110191"},
-]
-pytest-random = [
-    {file = "pytest-random-0.02.tar.gz", hash = "sha256:92f25db8c5d9ffc20d90b51997b914372d6955cb9cf1f6ead45b90514fc0eddd"},
 ]
 pyyaml = [
     {file = "PyYAML-5.3.1-cp27-cp27m-win32.whl", hash = "sha256:74809a57b329d6cc0fdccee6318f44b9b8649961fa73144a98735b0aaf029f1f"},

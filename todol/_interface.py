@@ -12,6 +12,7 @@ See https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#color-codes
 """
 
 import os as _os
+import platform as _platform
 import shutil as _shutil
 import sys as _sys
 from typing import Dict, NoReturn, Optional, Tuple
@@ -52,7 +53,7 @@ class Interface:
                 "arguments 'force_color' and 'no_color' are mutually exclusive", 1
             )
         self._print_colors: bool = force_color or (
-            not no_color and _sys.stdout.isatty()
+            not (no_color or _platform.system() == "Windows") and _sys.stdout.isatty()
         )
 
     def __getattr__(self, attr: str) -> str:
@@ -125,10 +126,6 @@ class Interface:
             file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
         )
 
-    def error(self, msg: str, errorcode: int = 1) -> NoReturn:
-        """Raise an error"""
-        raise Exception(msg, errorcode)
-
     def success(self, msg: str = "Success!", *, err: bool = False) -> None:
         """Print a success message"""
         print(
@@ -176,10 +173,15 @@ BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 
 _trash = open(_os.devnull, "w")
 
-info, warn, error, success, softerror = (
+
+def error(msg: str, errorcode: int = 1) -> NoReturn:
+    """Raise an error"""
+    raise Exception(msg, errorcode)
+
+
+info, warn, success, softerror = (
     color_obj.info,
     color_obj.warn,
-    color_obj.error,
     color_obj.success,
     color_obj.softerror,
 )

@@ -4,6 +4,7 @@
 # type: ignore
 """A pyinvoke script (replacing GNU Make)"""
 
+import glob
 import os
 import shutil
 from pathlib import Path
@@ -31,6 +32,7 @@ def test(command, coverage=True, verbosity=3, color=True):
 @task
 def clean(_, caches=True, hypo=True, cov=True):
     to_destroy = []
+    to_destroy.extend([Path(globbed) for globbed in glob.iglob("todol_test_*")])
     if caches:
         _ = list(here.rglob("__pycache__"))
         if here.joinpath(".pytest_cache").exists():
@@ -40,13 +42,10 @@ def clean(_, caches=True, hypo=True, cov=True):
         if here.joinpath(".hypothesis").exists():
             to_destroy.append(here.joinpath(".hypothesis"))
     if cov:
-        if here.joinpath(".coverage").exists():
-            to_destroy.append(here.joinpath(".coverage"))
-            to_destroy.append(here.joinpath("coverage.xml"))
+        to_destroy.extend([Path(globbed) for globbed in glob.iglob(".coverage*")])
+        to_destroy.extend([Path(globbed) for globbed in glob.iglob("coverage*")])
     for thing in to_destroy:
         if thing.is_dir():
-            # print(f"Will remove dir {thing}")
             shutil.rmtree(str(thing))
         else:
             os.remove(thing)
-            # print(f"Will remove file {thing}")
