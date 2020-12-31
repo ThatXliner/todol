@@ -13,7 +13,13 @@ from typing import Any, Callable, Tuple, Union
 from . import _interface as _intf
 
 today = _datetime.date.today()
-tomorrow = today.replace(day=today.day + 1)
+try:
+    tomorrow = today.replace(day=today.day + 1)
+except ValueError:  # A new month
+    try:
+        tomorrow = today.replace(month=today.month + 1, day=1)
+    except ValueError:
+        tomorrow = today.replace(year=today.year + 1, month=1, day=1)
 users_shell = shell = _Path(
     _os.environ.get("SHELL", (_shutil.which("bash") or "/bin/bash"))
 ).name
