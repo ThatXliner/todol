@@ -4,7 +4,7 @@
 import hypothesis.strategies as st
 import pytest
 from hypothesis import assume, given
-from todol._interface import Interface
+from todol import _interface as interface
 
 
 class TestInterface:
@@ -15,5 +15,10 @@ class TestInterface:
         assume(arg1 ^ arg2)
         assume(bad1 and bad2)
         with pytest.raises(ValueError):
-            Interface(bad1, bad2)
-        Interface(arg1, arg2)
+            interface.Interface(bad1, bad2)
+        interface.Interface(arg1, arg2)
+
+    @given(random_error_msg=st.text())
+    def test_error_raises(self, random_error_msg):
+        with pytest.raises(Exception):
+            interface.error(random_error_msg)
