@@ -23,6 +23,7 @@ except ValueError:  # A new month
 users_shell = shell = _Path(
     _os.environ.get("SHELL", (_shutil.which("bash") or "/bin/bash"))
 ).name
+rc_file_path = _Path(_os.environ.get("RC_FILE", f"~/.{users_shell}rc")).expanduser()
 
 
 def fuzzy_match(
