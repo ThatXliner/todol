@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # pylint: disable=C,R0201,R0903
+import re
+
 import hypothesis.strategies as st
+import pytest
 from hypothesis import assume, example, given
 from todol import _utils
 
@@ -28,13 +31,18 @@ class TestIsoParsing:
             == random_data
         )
 
+    @given(invalid_string=st.text())
+    def test_raises(self, invalid_string):
+        assume(not re.match(r"\d{4}-\d{4}-\d{4}", invalid_string))
+        with pytest.raises(ValueError):
+            _utils.parse_isoformat_date(invalid_string)
 
-class TestMisc:
-    @given(text=st.text())
-    def test_str_simularize(self, text):
-        assert text.lower().strip() == _utils.sim_str(text)
 
-    @given(text=st.text())
-    def test_str_convert(self, text):
-        assume(text != _utils.sim_str(text))
-        assert _utils.sim_str(text) != text
+def test_deserialize_raises():
+    with pytest.raises(TypeError):
+        _utils.deserialize(object)
+
+
+@given(text=st.text())
+def test_str_simularize(text):
+    assert text.lower().strip() == _utils.sim_str(text)
