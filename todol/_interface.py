@@ -126,6 +126,10 @@ class Interface:
             file=(_sys.stderr if err else _sys.stdout) if not shutup else _trash,
         )
 
+    def error(self, msg: str, errorcode: int = 1) -> NoReturn:
+        """Raise an error"""
+        raise Exception(msg, errorcode)
+
     def success(self, msg: str = "Success!", *, err: bool = False) -> None:
         """Print a success message"""
         print(
@@ -174,14 +178,10 @@ BACKGROUND_CYAN: str = _ansi_prefix + "46m"
 _trash = open(_os.devnull, "w")
 
 
-def error(msg: str, errorcode: int = 1) -> NoReturn:
-    """Raise an error"""
-    raise Exception(msg, errorcode)
-
-
-info, warn, success, softerror = (
+info, warn, error, success, softerror = (
     color_obj.info,
     color_obj.warn,
+    color_obj.error,
     color_obj.success,
     color_obj.softerror,
 )
