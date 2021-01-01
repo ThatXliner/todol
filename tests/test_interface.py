@@ -4,9 +4,7 @@
 import hypothesis.strategies as st
 import pytest
 from hypothesis import assume, given
-
 from todol import _interface as interface
-
 
 
 class TestInterface:
@@ -24,4 +22,3 @@ class TestInterface:
     def test_error_raises(self, random_error_msg):
         with pytest.raises(Exception):
             interface.error(random_error_msg)
-
