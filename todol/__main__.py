@@ -76,8 +76,25 @@ remove_parser = subparsers.add_parser(
 )
 remove_parser.add_argument(
     "todo",
+    nargs="?",
+    default=None,
     help="The todo to remove. Will be fuzzy matched or matched by ID/date/etc",
 )
+remove_parser.add_argument(
+    "--all-finished",
+    "--finished",
+    help="Remove all finished todos",
+    action="store_true",
+    dest="all_finished",
+)
+remove_parser.add_argument(
+    "--shell",
+    "--remove-shell",
+    help="Don't show todos at startup anymore",
+    action="store_true",
+    dest="remove_shell",
+)
+
 
 finish_parser = subparsers.add_parser(
     "finish",
@@ -166,6 +183,18 @@ def main() -> None:  # TODO: REFACTOR this to an object
 
     def command_remove() -> int:
         todos = _get_todo_data()
+        if not args.todo:  # type: ignore
+            if not (args.all_finished or args.remove_shell):  # type: ignore
+                remove_parser.print_help()
+                return 0
+            if args.remove_shell:  # type: ignore
+                _utils.remove_shell()
+            if args.all_finished:  # type: ignore
+                interface.info("Removing all finished todos...")
+                todos["finished"] = []
+                todo_index.write_text(json.dumps(todos))
+                interface.success("Done!")
+            return 0
         assert isinstance(args.todo, str)  # type: ignore
 
         interface.info(f"Removing todo {args.todo!r}...")
