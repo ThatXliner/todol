@@ -23,6 +23,7 @@ except ValueError:  # A new month
 users_shell = shell = _Path(
     _os.environ.get("SHELL", (_shutil.which("bash") or "/bin/bash"))
 ).name
+rc_file_path = _Path(_os.environ.get("RC_FILE", f"~/.{users_shell}rc")).expanduser()
 
 
 def fuzzy_match(
@@ -179,6 +180,30 @@ def deserialize(obj: Deserializable) -> Any:
         ) from exception
 
 
+def remove_shell() -> None:
+    _already_injected_re = _re.compile(
+        r"# >>> Section managed/injected by Todol (?P<version>[.\d]+)>>>\n"
+        r"# Make sure it is on your PYTHONPATH\n"
+        r".+\n"
+        r"# Run `todol list`\n"
+        r"(?P<python>.+) -m todol list\n"
+        r"# <<<<<<\n",
+        flags=_re.IGNORECASE,
+    )
+    # Calculate the rc file
+    if not (rc_file_path.exists() and rc_file_path.is_file()):
+        rc_file_path.touch()
+
+    # Get rc file contents
+    current_contents = rc_file_path.read_text()
+
+    # Make sure that we have not already injected or an old version has
+    match = _already_injected_re.search(current_contents)
+    if match:
+        current_contents = _already_injected_re.sub("\n", current_contents)
+        rc_file_path.write_text(current_contents)
+
+
 def initialize_shell(version: str) -> None:
     """Initialize the shell for todol"""
     project_dir = _Path(__file__).parent.parent
@@ -205,7 +230,7 @@ def initialize_shell(version: str) -> None:
     )
 
     # Calculate the rc file
-    rc_file_path = _Path(_os.environ.get("RC_FILE", f"~/.{users_shell}rc")).expanduser()
+
     if not (rc_file_path.exists() and rc_file_path.is_file()):
         rc_file_path.touch()
 
