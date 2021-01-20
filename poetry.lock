@@ -168,7 +168,7 @@ zoneinfo = ["importlib-resources (>=3.3.0)", "backports.zoneinfo (>=0.2.1)", "tz
 name = "importlib-metadata"
 version = "3.3.0"
 description = "Read metadata from Python packages"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -280,7 +280,7 @@ python-versions = ">=2.6"
 name = "pluggy"
 version = "0.13.1"
 description = "plugin and hook calling mechanisms for python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -439,7 +439,7 @@ python-versions = "*"
 name = "typing-extensions"
 version = "3.7.4.3"
 description = "Backported and Experimental Type Hints for Python 3.5+"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -463,7 +463,7 @@ python-versions = "*"
 name = "zipp"
 version = "3.4.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -477,7 +477,7 @@ complete = ["pycomplete"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "a8af35008e536afd373633f35f490e1c25fd4fbe236dfcf7f2dc6784785ade49"
+content-hash = "035dbd01e83d1fe22972b9886e409fc75a5d3b23b1fe0ebf3f04e17f275f3521"
 
 [metadata.files]
 appdirs = [
