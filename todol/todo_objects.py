@@ -98,7 +98,7 @@ class TodoContainer(_utils.Deserializable):
     def __getitem__(
         self, todo_name_or_id: Union[Dict[str, str], Todo, str]
     ) -> Optional[Todo]:
-        """An alias for :py:meth:`.get`"""
+        """An alias for :meth:`.get`"""
         return self.get(todo_name_or_id)
 
     def __iter__(self) -> Iterator[Todo]:
@@ -111,11 +111,11 @@ class TodoContainer(_utils.Deserializable):
         return [thing.__deserialize__() for thing in self._todos]
 
     def index(self, thing: Todo) -> int:
-        """The index method similar to :py:obj:`list`"""
+        """The index method similar to :obj:`list`"""
         return self._todos.index(thing)
 
     def pop(self, index: int = -1) -> Todo:
-        """The pop method similar to :py:obj:`list`"""
+        """The pop method similar to :obj:`list`"""
         return self._todos.pop(index)
 
     def pop_thing(self, thing: Union[Dict[str, str], Todo]) -> Todo:
@@ -124,7 +124,7 @@ class TodoContainer(_utils.Deserializable):
         Parameters
         ----------
         thing : Union[Dict[str, str], Todo]
-            A dictionary or a :py:obj:`Todo` object to find and pop.
+            A dictionary or a :obj:`Todo` object to find and pop.
 
         Returns
         -------
@@ -149,7 +149,7 @@ class TodoContainer(_utils.Deserializable):
             raise IndexError("That todo doesn't exist!") from exception
 
     def remove(self, thing: Todo) -> None:
-        """The remove method similar to :py:obj:`list`"""
+        """The remove method similar to :obj:`list`"""
         self._todos.remove(thing)
 
     def get(
